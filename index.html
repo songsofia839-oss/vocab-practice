@@ -93,6 +93,17 @@ button.ghost{background:transparent;color:var(--muted);padding:8px 12px;font-wei
 .done .big{font-size:3rem;margin:0}
 .done p{color:var(--muted)}
 .done strong{color:var(--ink)}
+/* home footer */
+.home-foot{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);text-align:center}
+button.outline{background:transparent;color:var(--accent);border:2px solid var(--accent);padding:10px 20px;font-size:.95rem}
+button.outline:hover{background:var(--card);opacity:1}
+/* stats */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 14px}
+@media (max-width:420px){.stat-grid{grid-template-columns:1fr}}
+.stat{background:var(--bg);border-radius:14px;padding:14px 16px}
+.stat b{display:block;font-size:1.6rem;line-height:1.2}
+.stat span{color:var(--muted);font-size:.88rem}
+.note{color:var(--muted);font-size:.85rem;margin:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -109,7 +120,9 @@ computer, 电脑
 beautiful, 美丽的"></textarea>
     <div id="input-msg" class="notice hidden" role="alert"></div>
     <button id="start-btn" class="full" type="button">Start Practicing</button>
-  </section>
+    </section>
+
+  <div id="home-foot" class="home-foot"><button id="stats-btn" class="outline" type="button">📊 Community Statistics</button></div>
 
   <!-- Quiz screen -->
   <section id="screen-quiz" class="hidden">
@@ -138,6 +151,15 @@ beautiful, 美丽的"></textarea>
     <div class="foot"><button id="quit-btn" class="ghost" type="button">Back to word list</button></div>
   </section>
 
+  <!-- Statistics screen -->
+  <section id="screen-stats" class="card hidden">
+    <h1>Community statistics</h1>
+    <p class="sub">Anonymous, aggregated usage across all visitors. Vocabulary lists and typed answers are never collected, and no accounts are needed.</p>
+    <div id="stats-body" aria-live="polite"></div>
+    <p id="stats-updated" class="note"></p>
+    <button id="stats-back" class="full" type="button">Back</button>
+  </section>
+
   <!-- Completion screen -->
   <section id="screen-done" class="card done hidden">
     <p class="big" aria-hidden="true">🎉</p>
@@ -152,6 +174,60 @@ beautiful, 美丽的"></textarea>
   "use strict";
   var TARGET = 3;
   var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- Anonymous analytics ----------
+     Set ANALYTICS_ENDPOINT to your deployed community-stats-backend Worker URL.*/
+  var ANALYTICS_ENDPOINT = "https://vocab-stats.vocab-practice.workers.dev";
+  var Analytics = (function(){
+    var IDLE_MS = 30000, TICK = 1000;
+    var enabled = !!ANALYTICS_ENDPOINT && !navigator.webdriver &&
+      !/bot|crawl|spider|headless|lighthouse/i.test(navigator.userAgent);
+    var sess = null, last = 0, timer = null;
+    function eid(){
+      var a = new Uint8Array(8); crypto.getRandomValues(a);
+      return Array.prototype.map.call(a, function(b){ return ("0"+b.toString(16)).slice(-2); }).join("");
+    }
+    function send(type, extra, beacon){
+      if(!enabled) return;
+      var body = JSON.stringify(Object.assign({ type: type, eid: eid() }, extra || {}));
+      try{
+        if(beacon && navigator.sendBeacon){ navigator.sendBeacon(ANALYTICS_ENDPOINT+"/collect", new Blob([body], {type:"text/plain"})); return; }
+        fetch(ANALYTICS_ENDPOINT+"/collect", { method:"POST", body: body, keepalive:true, headers:{"Content-Type":"text/plain"} }).catch(function(){});
+      }catch(e){}
+    }
+    function touch(){ last = Date.now(); }
+    ["keydown","pointerdown","input"].forEach(function(t){ document.addEventListener(t, touch, true); });
+    // Active time only counts while the tab is visible, focused and recently used.
+    function tick(){
+      if(!sess) return;
+      var now = Date.now(), dt = Math.min(now - sess.prev, 2*TICK);
+      sess.prev = now;
+      if(document.visibilityState === "visible" && document.hasFocus() && now - last <= IDLE_MS) sess.ms += dt;
+    }
+    function sessionEnd(beacon){
+      if(!sess) return;
+      tick(); clearInterval(timer);
+      var s = sess; sess = null;
+      if(s.attempts > 0 && s.ms >= 1000) send("session_end", { ms: Math.round(s.ms) }, beacon);
+    }
+    window.addEventListener("pagehide", function(){ sessionEnd(true); });
+    return {
+      configured: !!ANALYTICS_ENDPOINT,
+      visit: function(){ send("visit"); },
+      sessionStart: function(){
+        sessionEnd(); touch();
+        sess = { ms:0, attempts:0, prev:Date.now() };
+        timer = setInterval(tick, TICK);
+        send("session_start");
+      },
+      attempt: function(w){ if(!sess || w._a) return; w._a = true; sess.attempts++; send("attempt"); },
+      mastered: function(w){ if(!sess || w._m) return; w._m = true; send("mastered"); },
+      sessionEnd: sessionEnd,
+      fetchStats: function(){
+        return fetch(ANALYTICS_ENDPOINT+"/stats").then(function(r){ if(!r.ok) throw new Error(); return r.json(); });
+      }
+    };
+  })();
 
   /* ---------- Parsing & validation ---------- */
   function normalize(s){ return s.trim().replace(/\s+/g," ").toLowerCase(); }
@@ -196,7 +272,8 @@ beautiful, 美丽的"></textarea>
 
   /* ---------- Rendering ---------- */
   function show(screen){
-    ["input","quiz","done"].forEach(function(s){ $("screen-"+s).classList.toggle("hidden", s !== screen); });
+    ["input","quiz","done","stats"].forEach(function(s){ $("screen-"+s).classList.toggle("hidden", s !== screen); });
+    $("home-foot").classList.toggle("hidden", screen !== "input");
   }
 
   function renderOverall(){
@@ -240,6 +317,7 @@ beautiful, 美丽的"></textarea>
 
   function finish(){
     renderOverall();
+    Analytics.sessionEnd();
     $("done-total").textContent = state.words.length;
     show("done");
   }
@@ -262,6 +340,7 @@ beautiful, 美丽的"></textarea>
       return;
     }
     state.words = res.words; state.current = null;
+    Analytics.sessionStart();
     show("quiz");
     $("quiz-inner").classList.remove("out");
     showQuestion();
@@ -276,11 +355,13 @@ beautiful, 美丽的"></textarea>
     var val = normalize($("answer").value);
     if(!val){ $("answer").focus(); return; }
     var w = state.current;
+    Analytics.attempt(w);
     if(w.answers.indexOf(val) !== -1){
       state.locked = true;
       w.correct++;
       renderWordProgress(); renderOverall();
       var mastered = w.correct >= TARGET;
+      if(mastered) Analytics.mastered(w);
       setFeedback("ok", mastered ? "Correct! You’ve mastered this word." : "Correct!");
       setTimeout(advance, mastered ? 1100 : 800);
     } else {
@@ -301,6 +382,7 @@ beautiful, 美丽的"></textarea>
   }
 
   function reset(){
+    Analytics.sessionEnd();
     state.words = []; state.current = null; state.locked = false;
     show("input");
     $("vocab-input").focus();
@@ -320,6 +402,39 @@ beautiful, 美丽的"></textarea>
     if(!state.locked){ $("answer").classList.remove("bad","shake"); }
   });
   $("again-btn").addEventListener("click", reset);
+
+  /* ---------- Community statistics dashboard ---------- */
+  function fmtDuration(ms){
+    if(!ms) return "—";
+    var s = Math.round(ms/1000), m = Math.floor(s/60);
+    return m ? m+"m "+(s%60)+"s" : s+"s";
+  }
+  function fmtNum(n){ return Number(n).toLocaleString(); }
+  function statsMessage(text){ $("stats-body").innerHTML = '<div class="notice info">'+text+'</div>'; $("stats-updated").textContent = ""; }
+  function openStats(){
+    show("stats");
+    if(!Analytics.configured){ statsMessage("Community statistics aren’t connected yet, so there is nothing to show."); return; }
+    statsMessage("Loading…");
+    Analytics.fetchStats().then(function(d){
+      if(!d.visits){ statsMessage("No usage data yet. Check back after people have practiced."); return; }
+      var cards = [
+        [fmtNum(d.visits), "Total website visits"],
+        [fmtNum(d.uniqueVisitors), "Unique visitors"],
+        [fmtNum(d.sessions), "Practice sessions started"],
+        [fmtNum(d.attempted), "Words attempted"],
+        [fmtNum(d.mastered), "Words mastered"],
+        [fmtDuration(d.avgMs), "Average active session"],
+        [fmtDuration(d.longestMs), "Longest active session"]
+      ];
+      $("stats-body").innerHTML = '<div class="stat-grid">' + cards.map(function(c){
+        return '<div class="stat"><b>'+c[0]+'</b><span>'+c[1]+'</span></div>';
+      }).join("") + '</div>';
+      $("stats-updated").textContent = d.updatedAt ? "Last updated: " + new Date(d.updatedAt).toLocaleString() : "";
+    }).catch(function(){ statsMessage("Couldn’t load statistics right now. Please try again later."); });
+  }
+  $("stats-btn").addEventListener("click", openStats);
+  $("stats-back").addEventListener("click", function(){ show("input"); });
+  Analytics.visit();
   $("quit-btn").addEventListener("click", reset);
 })();
 </script>
