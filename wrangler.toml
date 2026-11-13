@@ -1,0 +1,11 @@
+name = "vocab-stats"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vocab-stats"
+database_id = "4a98bbd6-921c-46e1-b6f1-99d8977410fd"
+
+[vars]
+ALLOWED_ORIGIN = "https://songsofia839-oss.github.io/vocab-practice/"
