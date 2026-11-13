@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vocabulary Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eaf1f6; --card:#ffffff; --ink:#1e2b37; --muted:#66798a; --line:#d5e0e9;
+  --accent:#3b7ea1; --accent-ink:#ffffff; --track:#dbe6ee;
+  --ok:#2f8f63; --ok-bg:#e2f4ea; --bad:#c4533f; --bad-bg:#fbe7e2;
+  --shadow:0 10px 30px rgba(40,70,95,.10);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#131c24; --card:#1b2733; --ink:#e6eef5; --muted:#92a6b6; --line:#2c3b49;
+    --accent:#6bb3d6; --accent-ink:#0f1a22; --track:#2a3948;
+    --ok:#5fcf97; --ok-bg:#173326; --bad:#f08a76; --bad-bg:#3a1f1a;
+    --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131c24; --card:#1b2733; --ink:#e6eef5; --muted:#92a6b6; --line:#2c3b49;
+  --accent:#6bb3d6; --accent-ink:#0f1a22; --track:#2a3948;
+  --ok:#5fcf97; --ok-bg:#173326; --bad:#f08a76; --bad-bg:#3a1f1a;
+  --shadow:0 10px 30px rgba(0,0,0,.35); color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0; min-height:100vh; background:var(--bg); color:var(--ink);
+  font-family:"Nunito","Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.5; display:flex; justify-content:center; align-items:flex-start; padding:clamp(16px,6vh,64px) 16px;
+}
+main{width:100%;max-width:560px}
+.card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:clamp(22px,5vw,40px)}
+h1{font-size:1.6rem;margin:0 0 6px;letter-spacing:-.01em}
+.sub{margin:0 0 20px;color:var(--muted)}
+textarea,input[type=text]{
+  width:100%;font:inherit;color:var(--ink);background:var(--bg);
+  border:2px solid var(--line);border-radius:12px;padding:14px 16px;outline:none;
+  transition:border-color .15s, background-color .15s;
+}
+textarea{min-height:240px;resize:vertical;line-height:1.7}
+textarea:focus,input[type=text]:focus{border-color:var(--accent)}
+::placeholder{color:var(--muted);opacity:.8}
+button{
+  font:inherit;font-weight:700;border:0;border-radius:12px;padding:13px 22px;cursor:pointer;
+  background:var(--accent);color:var(--accent-ink);transition:transform .1s, opacity .15s;
+}
+button:hover{opacity:.92} button:active{transform:scale(.98)}
+button.ghost{background:transparent;color:var(--muted);padding:8px 12px;font-weight:600}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.full{width:100%;margin-top:16px}
+.notice{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:.95rem}
+.notice.error{background:var(--bad-bg);color:var(--bad)}
+.notice.info{background:var(--track);color:var(--muted)}
+.notice ul{margin:6px 0 0;padding-left:20px}
+.hidden{display:none!important}
+
+/* quiz */
+.overall{margin-bottom:18px}
+.overall-row{display:flex;justify-content:space-between;font-size:.92rem;color:var(--muted);margin-bottom:8px;gap:12px;flex-wrap:wrap}
+.bar{height:10px;background:var(--track);border-radius:99px;overflow:hidden}
+.bar>span{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .4s ease}
+.quiz{text-align:center}
+.quiz-inner{transition:opacity .25s ease, transform .25s ease}
+.quiz-inner.out{opacity:0;transform:translateY(6px)}
+.prompt-label{color:var(--muted);font-size:.95rem;margin:10px 0 6px}
+.cn{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;font-weight:500;font-size:clamp(2.2rem,9vw,3.4rem);line-height:1.25;margin:0 0 20px;word-break:break-word}
+.dots{display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:18px;color:var(--muted);font-size:.92rem}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--track);transition:background-color .2s}
+.dot.on{background:var(--ok)}
+.answer-row{display:flex;gap:10px}
+.answer-row input{text-align:center;font-size:1.15rem;flex:1;min-width:0}
+.answer-row input.ok{border-color:var(--ok);background:var(--ok-bg)}
+.answer-row input.bad{border-color:var(--bad);background:var(--bad-bg)}
+.answer-row input.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.feedback{min-height:1.8em;margin-top:14px;font-weight:700}
+.feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+.foot{display:flex;justify-content:center;margin-top:10px}
+
+/* done */
+.done{text-align:center}
+.done .big{font-size:3rem;margin:0}
+.done p{color:var(--muted)}
+.done strong{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <!-- Input screen -->
+  <section id="screen-input" class="card">
+    <h1>Vocabulary practice</h1>
+    <p class="sub">Paste your words, one per line: English, then a comma, then the Chinese.</p>
+    <textarea id="vocab-input" spellcheck="false" aria-label="Vocabulary list"
+placeholder="apple, 苹果
+banana, 香蕉
+computer, 电脑
+beautiful, 美丽的"></textarea>
+    <div id="input-msg" class="notice hidden" role="alert"></div>
+    <button id="start-btn" class="full" type="button">Start Practicing</button>
+  </section>
+
+  <!-- Quiz screen -->
+  <section id="screen-quiz" class="hidden">
+    <div class="overall">
+      <div class="overall-row">
+        <span>Words mastered: <b id="mastered">0</b>/<b id="total">0</b></span>
+        <span>Remaining words: <b id="remaining">0</b></span>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><span id="bar-fill"></span></div>
+    </div>
+    <div class="card quiz">
+      <div id="quiz-inner" class="quiz-inner">
+        <p class="prompt-label">Type the English word for</p>
+        <p id="cn" class="cn" lang="zh-CN"></p>
+        <div class="dots" aria-live="polite">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span id="word-progress">0/3 correct</span>
+        </div>
+        <div class="answer-row">
+          <input id="answer" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your answer" placeholder="English word">
+          <button id="submit-btn" type="button">Submit</button>
+        </div>
+        <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="foot"><button id="quit-btn" class="ghost" type="button">Back to word list</button></div>
+  </section>
+
+  <!-- Completion screen -->
+  <section id="screen-done" class="card done hidden">
+    <p class="big" aria-hidden="true">🎉</p>
+    <h1>All words mastered!</h1>
+    <p>You answered each of your <strong id="done-total">0</strong> words correctly three times.</p>
+    <button id="again-btn" class="full" type="button">Practice Again</button>
+  </section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var TARGET = 3;
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- Parsing & validation ---------- */
+  function normalize(s){ return s.trim().replace(/\s+/g," ").toLowerCase(); }
+
+  // Returns { words, errors, duplicates }
+  function parseVocabulary(text){
+    var words = [], errors = [], dupes = 0;
+    var byPair = {}, byChinese = {};
+    text.split(/\r?\n/).forEach(function(raw, i){
+      var line = raw.trim();
+      if(!line) return;
+      var m = line.match(/[,，]/);
+      if(!m){ errors.push("Line "+(i+1)+": add a comma between the English word and the Chinese."); return; }
+      var en = line.slice(0, m.index).trim().replace(/\s+/g," ");
+      var zh = line.slice(m.index+1).trim();
+      if(!en || !zh){ errors.push("Line "+(i+1)+": both an English word and a Chinese translation are needed."); return; }
+      if(!/[A-Za-z]/.test(en)){ errors.push("Line "+(i+1)+": the part before the comma should be English."); return; }
+      var pairKey = normalize(en)+"|"+zh;
+      if(byPair[pairKey]){ dupes++; return; }
+      byPair[pairKey] = true;
+      // Same Chinese, different English: accept either spelling for one question.
+      var existing = byChinese[zh];
+      if(existing){ existing.answers.push(normalize(en)); dupes++; return; }
+      var w = { english: en, chinese: zh, answers: [normalize(en)], correct: 0 };
+      byChinese[zh] = w;
+      words.push(w);
+    });
+    return { words: words, errors: errors, duplicates: dupes };
+  }
+
+  /* ---------- Session state (memory only) ---------- */
+  var state = { words: [], current: null, locked: false };
+
+  function pool(){ return state.words.filter(function(w){ return w.correct < TARGET; }); }
+
+  function pickNext(){
+    var p = pool();
+    if(!p.length) return null;
+    if(p.length > 1 && state.current) p = p.filter(function(w){ return w !== state.current; });
+    return p[Math.floor(Math.random()*p.length)];
+  }
+
+  /* ---------- Rendering ---------- */
+  function show(screen){
+    ["input","quiz","done"].forEach(function(s){ $("screen-"+s).classList.toggle("hidden", s !== screen); });
+  }
+
+  function renderOverall(){
+    var total = state.words.length;
+    var mastered = state.words.filter(function(w){ return w.correct >= TARGET; }).length;
+    var pct = total ? Math.round(mastered/total*100) : 0;
+    $("mastered").textContent = mastered;
+    $("total").textContent = total;
+    $("remaining").textContent = total - mastered;
+    $("bar-fill").style.width = pct+"%";
+    $("bar").setAttribute("aria-valuenow", pct);
+  }
+
+  function renderWordProgress(){
+    var w = state.current;
+    $("word-progress").textContent = w.correct+"/"+TARGET+" correct";
+    var dots = document.querySelectorAll(".dot");
+    for(var i=0;i<dots.length;i++) dots[i].classList.toggle("on", i < w.correct);
+  }
+
+  function setFeedback(kind, msg){
+    var f = $("feedback"), a = $("answer");
+    f.className = "feedback"+(kind ? " "+kind : "");
+    f.textContent = msg || "";
+    a.classList.remove("ok","bad","shake");
+    if(kind){ a.classList.add(kind); if(kind==="bad"){ void a.offsetWidth; a.classList.add("shake"); } }
+  }
+
+  function showQuestion(){
+    var next = pickNext();
+    if(!next){ finish(); return; }
+    state.current = next;
+    state.locked = false;
+    $("cn").textContent = next.chinese;
+    $("answer").value = "";
+    setFeedback(null, "");
+    renderWordProgress();
+    renderOverall();
+    $("answer").focus();
+  }
+
+  function finish(){
+    renderOverall();
+    $("done-total").textContent = state.words.length;
+    show("done");
+  }
+
+  /* ---------- Actions ---------- */
+  function start(){
+    var msg = $("input-msg");
+    var res = parseVocabulary($("vocab-input").value);
+    msg.className = "notice hidden"; msg.innerHTML = "";
+    if(res.errors.length){
+      var shown = res.errors.slice(0,5);
+      var html = "<b>Please fix the following and try again:</b><ul>"+shown.map(function(e){ return "<li>"+escapeHtml(e)+"</li>"; }).join("")+"</ul>";
+      if(res.errors.length > 5) html += "<div>…and "+(res.errors.length-5)+" more.</div>";
+      msg.className = "notice error"; msg.innerHTML = html;
+      return;
+    }
+    if(!res.words.length){
+      msg.className = "notice error";
+      msg.textContent = "Add at least one word first, for example: apple, 苹果";
+      return;
+    }
+    state.words = res.words; state.current = null;
+    show("quiz");
+    $("quiz-inner").classList.remove("out");
+    showQuestion();
+    if(res.duplicates){
+      // Mention merged duplicates once the user returns to the input screen if needed; keep quiz uncluttered.
+      state.dupes = res.duplicates;
+    }
+  }
+
+  function submit(){
+    if(state.locked || !state.current) return;
+    var val = normalize($("answer").value);
+    if(!val){ $("answer").focus(); return; }
+    var w = state.current;
+    if(w.answers.indexOf(val) !== -1){
+      state.locked = true;
+      w.correct++;
+      renderWordProgress(); renderOverall();
+      var mastered = w.correct >= TARGET;
+      setFeedback("ok", mastered ? "Correct! You’ve mastered this word." : "Correct!");
+      setTimeout(advance, mastered ? 1100 : 800);
+    } else {
+      state.locked = true;
+      setFeedback("bad", "Incorrect. The correct answer is: " + w.english);
+      setTimeout(advance, 2400);
+    }
+  }
+
+  function advance(){
+    var inner = $("quiz-inner");
+    if(!pool().length){ finish(); return; }
+    inner.classList.add("out");
+    setTimeout(function(){
+      showQuestion();
+      inner.classList.remove("out");
+    }, 220);
+  }
+
+  function reset(){
+    state.words = []; state.current = null; state.locked = false;
+    show("input");
+    $("vocab-input").focus();
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; });
+  }
+
+  /* ---------- Wiring ---------- */
+  $("start-btn").addEventListener("click", start);
+  $("submit-btn").addEventListener("click", submit);
+  $("answer").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); submit(); }
+  });
+  $("answer").addEventListener("input", function(){
+    if(!state.locked){ $("answer").classList.remove("bad","shake"); }
+  });
+  $("again-btn").addEventListener("click", reset);
+  $("quit-btn").addEventListener("click", reset);
+})();
+</script>
+</body>
+</html>
