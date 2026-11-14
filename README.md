@@ -2,6 +2,8 @@
 
 Live Link: https://songsofia839-oss.github.io/vocab-practice/
 
+View visitor stats: https://vocab-stats.vocab-practice.workers.dev/stats
+
 A simple and interactive English vocabulary learning website designed for Chinese speakers like my parents (who are currently using it). Practice English vocabulary through Chinese-to-English translation and strengthen your memory through repeated exercises.
 
 ## Overview
